@@ -1,0 +1,48 @@
+# GitHub Profile Update Workflow
+# Automatiza la actualización de métricas y contenido del perfil
+# TODO: Integrar RSS feed del blog cuando esté disponible
+# TODO: Añadir badges dinámicos de estado de proyectos
+
+name: update-profile
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Ejecuta cada lunes a las 06:00 UTC
+  workflow_dispatch: # Permite ejecución manual desde GitHub UI
+
+jobs:
+  touch-readme:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Necesario para hacer push
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Update timestamp
+        run: |
+          echo "Last profile update: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" > .last_update_utc.txt
+          echo "Profile updated successfully"
+
+      # TODO: Descomentar cuando tenga blog/RSS feed
+      # - name: Fetch latest blog posts
+      #   run: |
+      #     curl -s https://lopezkristian.com/feed.xml | \
+      #     xmllint --xpath "//item/title/text()" - | head -5 > .latest_posts.txt
+
+      # TODO: Añadir generación de badges personalizados
+      # - name: Generate custom badges
+      #   run: |
+      #     echo "Badge generation logic here"
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .last_update_utc.txt
+          git commit -m "chore(profile): refresh meta [skip ci]" || echo "No changes to commit"
+
+      - name: Push changes
+        run: |
+          git push || echo "Nothing to push"
